@@ -1,3 +1,55 @@
+####################
+####DATA PREP#######
+###################
+
+#PC style sampling
+#For Plate Appearances
+data_prep_pc <- function(df, J){
+  
+  
+  agg.df <- aggregate(GameDate ~ PlayerId, data = df, FUN = length)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
+#For AB
+data_prep_pc_ab <- function(df, J){
+  
+  
+  agg.df <- aggregate(AB ~ PlayerId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
+#For BIP
+data_prep_pc_bip <- function(df, J){
+  
+  
+  agg.df <- aggregate(BIPyesno ~ PlayerId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
+
+
+
+#JP style sampling
+#For Plate Appearances
 data_prep_jp <- function(df, K){
   
   
@@ -10,11 +62,44 @@ data_prep_jp <- function(df, K){
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
   return(out.list)
+}
+
+#For At Bats
+data_prep_jp_ab <- function(df, K){
+  
+  
+  agg.df <- aggregate(AB ~ year + PlayerId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$AB >= K),]
+  key.vector <- paste(agg.df$year,agg.df$PlayerId)
+  
+  out.df <- df[which((paste(df$year,df$PlayerId) %in% key.vector & df$AB == 1)),]
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
   
   
 }
 
-matrix_parse <- function(df.obj, K, FUN){
+#For Batted Balls
+data_prep_jp_bip <- function(df, K){
+  
+  df <- df[which(df$HR != 1),] #removes all HRs
+  agg.df <- aggregate(BIPyesno ~ year + PlayerId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$BIPyesno >= K),]
+  key.vector <- paste(agg.df$year,agg.df$PlayerId)
+  
+  out.df <- df[which((paste(df$year,df$PlayerId) %in% key.vector & df$BIPyesno == 1)),]
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+  
+  
+}
+
+#Takes Data Parse and makes it into a value matrix
+matrix_parse <- function(df.obj, K, FUN, Random = T){
   
   stat.matrix <- NULL 
   df <- df.obj$df
@@ -23,13 +108,17 @@ matrix_parse <- function(df.obj, K, FUN){
     
     #player.year.df <-  subset(df, paste(df$year,df$PlayerId) == i)
     player.year.df <- df[which(key == i),]
-    player.vector <- FUN(player.year.df, K)
+    player.vector <- FUN(player.year.df, K, Random)
     stat.matrix <- rbind(stat.matrix, player.vector)
     
   }
   
   return(stat.matrix)
 }
+
+##################################
+####Cronbach Alpha Evaluation####
+#################################
 
 FG_alpha <- function(df, K=ncol(df)){
   
@@ -54,42 +143,121 @@ FG_alpha <- function(df, K=ncol(df)){
   
 }
 
-
+###################
 ####STAT PARSE####
+##################
 
-K_parse <- function(df,K){
+#Randomized
+stat_random <- function(df, K){
   
   len.df = nrow(df)
   set.seed(1)
-  down.sampled <- sample(1:len.df, size=K)
+  return(df[sample(1:len.df, size=K),])
   
-  return(df$K[down.sampled])
 }
 
-BB_parse <- function(df,K){
+
+
+#PA-based
+
+K_parse <- function(df,K,random=T){
   
-  len.df = nrow(df)
-  set.seed(1)
-  down.sampled <- sample(1:len.df, size=K)
-  
-  return(df$BB[down.sampled])
+  if (random) {
+    return(stat_random(df,K)$K[1:K])
+  }
+  else return(df$K[1:K])
 }
 
-OBP_parse <- function(df,K){
+BB_parse <- function(df,K,random=T){
   
-  len.df = nrow(df)
-  set.seed(1)
-  down.sampled <- sample(1:len.df, size=K)
-  
-  return(df$OnBase[down.sampled])
+  if (random) {
+    return(stat_random(df,K)$BB[1:K])
+  }
+  else return(df$BB[1:K])
 }
 
-HR_parse <- function(df,K){
+OBP_parse <- function(df,K,random=T){
   
-  len.df = nrow(df)
-  set.seed(1)
-  down.sampled <- sample(1:len.df, size=K)
+  if (random) {
+    return(stat_random(df,K)$OnBase[1:K])
+  }
+  else return(df$OnBase[1:K])
+}
+
+HR_parse <- function(df,K, random=T){
   
-  return(df$HR[down.sampled])
+  if (random) {
+    return(stat_random(df,K)$HR[1:K])
+  }
+  else return(df$HR[1:K])
 }
  
+
+HBP_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$HBP[1:K])
+  }
+  else return(df$HBP[1:K])
+}
+
+X1B_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$S[1:K])
+  }
+  else return(df$S[1:K])
+}
+
+X2B3B_parse <- function(df, K, random=T){
+  
+  if (random) {
+    random.df <- stat_random(df,K)
+    return(random.df$D[1:K]+random.df$T[1:K])
+  }
+  else return(df$D[1:K]+df$T[1:K])
+}
+
+ISO_parse <- function(df, K, random=T){
+  
+  if (random) {
+    random.df <- stat_random(df,K)
+    return(random.df$D[1:K]+random.df$T[1:K]*2+random.df$HR[1:K]*3)
+  }
+  else return(df$D[1:K]+df$T[1:K]*2+df$HR[1:K]*3)
+ 
+}
+
+wOBA_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$wOBA[1:K])
+  }
+  else return(df$wOBA[1:K])
+}
+
+
+
+
+
+#AB-based
+
+AVG_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$hits[1:K])
+  }
+  else return(df$hits[1:K])
+}
+
+
+SLG_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$SLG[1:K])
+  }
+  else return(df$SLG[1:K])
+}
+
+
+
