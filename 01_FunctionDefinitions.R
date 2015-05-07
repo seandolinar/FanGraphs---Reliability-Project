@@ -4,14 +4,32 @@
 
 #PC style sampling
 #For Plate Appearances
+
 data_prep_pc <- function(df, J){
   
   
   agg.df <- aggregate(GameDate ~ PlayerId, data = df, FUN = length)
   agg.df <- agg.df[which(agg.df$GameDate >= J),]
   
-  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.df <- df[which(df$PlayerId %in% agg.df$PlayerId),]
   out.player <- unique(out.df$PlayerId)
+  key.vector <- out.player
+  out.df$key <- out.df$PlayerId
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
+data_prep_pc_p <- function(df, J){
+  
+  
+  agg.df <- aggregate(GameDate ~ PitcherId, data = df, FUN = length)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$PitcherId %in% agg.df$PitcherId),]
+  out.player <- unique(out.df$PitcherId)
+  key.vector <- out.player
+  out.df$key <- out.df$PitcherId
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
   return(out.list)
@@ -22,10 +40,13 @@ data_prep_pc_ab <- function(df, J){
   
   
   agg.df <- aggregate(AB ~ PlayerId, data = df, FUN = sum)
-  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  agg.df <- agg.df[which(agg.df$AB >= J),]
   
-  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.df <- df[which(df$PlayerId %in% agg.df$PlayerId),]
+  out.df$key <- out.df$PlayerId
+  print(out.df)
   out.player <- unique(out.df$PlayerId)
+  key.vector <- out.player
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
   return(out.list)
@@ -36,16 +57,46 @@ data_prep_pc_bip <- function(df, J){
   
   
   agg.df <- aggregate(BIPyesno ~ PlayerId, data = df, FUN = sum)
-  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  agg.df <- agg.df[which(agg.df$BIPyesno >= J),]
   
-  out.df <- df[which(df$PlayerId) %in% agg.df$PlayerID,]
+  out.df <- df[which(df$PlayerId %in% agg.df$PlayerId),]
+  out.df$key <- out.df$PlayerId
   out.player <- unique(out.df$PlayerId)
+  key.vector <- out.player
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
   return(out.list)
 }
 
+data_prep_pc_new_bip <- function(df, J){
+  
+  
+  agg.df <- aggregate(GameDate ~ batter, data = df, FUN = length)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$batter %in% agg.df$batter),]
+  out.player <- unique(out.df$batter)
+  key.vector <- out.player
+  out.df$key <- out.df$batter
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
 
+data_prep_pc_new_bip_p <- function(df, J){
+  
+  
+  agg.df <- aggregate(GameDate ~ pitcher, data = df, FUN = length)
+  agg.df <- agg.df[which(agg.df$GameDate >= J),]
+  
+  out.df <- df[which(df$pitcher %in% agg.df$pitcher),]
+  out.player <- unique(out.df$pitcher)
+  key.vector <- out.player
+  out.df$key <- out.df$pitcher
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
 
 
 #JP style sampling
@@ -58,6 +109,9 @@ data_prep_jp <- function(df, K){
   key.vector <- paste(agg.df$year,agg.df$PlayerId)
   
   out.df <- df[which(paste(df$year,df$PlayerId) %in% key.vector),]
+  out.df$key <- paste(out.df$year,out.df$PlayerId)
+  
+    
   out.player <- unique(out.df$PlayerId)
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
@@ -73,6 +127,7 @@ data_prep_jp_ab <- function(df, K){
   key.vector <- paste(agg.df$year,agg.df$PlayerId)
   
   out.df <- df[which((paste(df$year,df$PlayerId) %in% key.vector & df$AB == 1)),]
+  out.df$key <- paste(out.df$year,out.df$PlayerId)
   out.player <- unique(out.df$PlayerId)
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
@@ -90,6 +145,8 @@ data_prep_jp_bip <- function(df, K){
   key.vector <- paste(agg.df$year,agg.df$PlayerId)
   
   out.df <- df[which((paste(df$year,df$PlayerId) %in% key.vector & df$BIPyesno == 1)),]
+  out.df$key <- paste(out.df$year,out.df$PlayerId)
+  
   out.player <- unique(out.df$PlayerId)
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
@@ -103,11 +160,12 @@ matrix_parse <- function(df.obj, K, FUN, Random = T){
   
   stat.matrix <- NULL 
   df <- df.obj$df
-  key <- paste(df$year,df$PlayerId)
+  #key <- df.obj$key
+  #key <- paste(df$year,df$PlayerId)
   for (i in df.obj$key.vector){
     
     #player.year.df <-  subset(df, paste(df$year,df$PlayerId) == i)
-    player.year.df <- df[which(key == i),]
+    player.year.df <- df[which(df$key == i),]
     player.vector <- FUN(player.year.df, K, Random)
     stat.matrix <- rbind(stat.matrix, player.vector)
     
@@ -192,7 +250,6 @@ HR_parse <- function(df,K, random=T){
   else return(df$HR[1:K])
 }
  
-
 HBP_parse <- function(df,K,random=T){
   
   if (random) {
@@ -245,11 +302,10 @@ wOBA_parse <- function(df,K,random=T){
 AVG_parse <- function(df,K,random=T){
   
   if (random) {
-    return(stat_random(df,K)$hits[1:K])
+    return(stat_random(df,K)$hit[1:K])
   }
-  else return(df$hits[1:K])
+  else return(df$hit[1:K])
 }
-
 
 SLG_parse <- function(df,K,random=T){
   
@@ -258,6 +314,36 @@ SLG_parse <- function(df,K,random=T){
   }
   else return(df$SLG[1:K])
 }
+
+
+
+
+#BIP-based  -- FROM 2009-2014_BIPvelocity.csv
+
+HH_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$Hard[1:K])
+  }
+  else return(df$Hard[1:K])
+}
+
+MH_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$Med[1:K])
+  }
+  else return(df$Med[1:K])
+}
+
+SH_parse <- function(df,K,random=T){
+  
+  if (random) {
+    return(stat_random(df,K)$Soft[1:K])
+  }
+  else return(df$Soft[1:K])
+}
+
 
 
 
