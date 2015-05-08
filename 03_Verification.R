@@ -1,5 +1,6 @@
 #FanGraphs Reliability Project -- Verification
 #v 0.2 -- adding pitchers and evaluation
+#v 0.2.1 -- evaluation is working but needs cleaned.
 
 
 #sets working directory
@@ -11,7 +12,7 @@ alpha_join <- function(number){
   return(trunc(number/10-1,1) * 10 + 10)
 }
 
-k <- 1
+
 
 
 
@@ -49,40 +50,50 @@ PD_stats <- function(stat.df,alpha.df){
 alpha.key <- read.csv('fg_alpha_out_test_ALLPA_PC1000_Random.csv')
 
 df <- df.prep$df
-player.vector <- df.prep$player.list[1]
 
+total <- c()
+player.vector <- df.prep$player.list[sample(1:length(df.prep$player.list),size=300)]
 
-for (i in player.vector[2]){
-  
+player.stat.df <- NULL
+for (i in player.vector){
+  print(i)
   player.df <- df[df$key == i,]
-  for (i in 1:nrow(player.df)){
+  for (j in 1:nrow(player.df)){
     
-    player.df$PA[i] <- i
-    player.df$culm_K[i] <- sum(player.df$K[1:i])/length(player.df$K[1:i])
-    
+    player.df$denom[j] <- j
+    player.df$stat.value[j] <- sum(player.df$K[1:j])/length(player.df$K[1:j]) #should make this loopable
     
   }
-  
+  player.df$stat.2000 <- player.df[which(player.df$denom==2000),]$stat.value
+  player.stat.df <- rbind(player.stat.df, player.df[1:N,])
   
 }
-apply(1:20, 2, FUN=alpha_join)
-
-
+print(eval_stat(player.stat.df, alpha.df))
+total <- c(total,eval_stat(player.stat.df, alpha.df))
+player.df$stat.2000
+mean(total)
+hist(total)
 
 out.df <- read.csv('fg_alpha_out_test_700PA_pitcher.csv')
-stat.df <- data.frame(denom.value=alpha_join(player.df$PA), denom=player.df$PA,stat.name='K_pct', stat.value=player.df$culm_K)
-
-alpha.df <- out.df
 N <- 500
+alpha.df <- out.df
 
-eval.df <- NULL
-for (i in 1:N){
-  
-  eval.df <- rbind(eval.df, PD_stats(stat.df[i,], alpha.df))
-  
+eval_stat <- function(player.df, alpha.df){
+
+    stat.df <- data.frame(denom.value=alpha_join(player.df$denom), denom=player.df$denom,stat.name='K_pct', 
+                          stat.value=player.df$stat.value, stat.2000=player.df$stat.2000)
+    N <- nrow(stat.df)
+    print(stat.df)
+    eval.df <- NULL
+    for (i in 1:N){
+      
+      eval.df <- rbind(eval.df, PD_stats(stat.df[i,], alpha.df))
+      
+    }
+    print(eval.df)
+    return(sum(eval.df$stat.2000 > eval.df$lower & eval.df$stat.2000 < eval.df$upper)/N)
+
 }
-eval.df$stat.2000 <- stat.df[which(stat.df$denom==2000),]$stat.value
 
-sum(eval.df$stat.2000 > eval.df$lower & eval.df$stat.2000 < eval.df$upper)/N
 
 
