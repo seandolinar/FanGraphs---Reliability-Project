@@ -26,7 +26,7 @@ data.BIP <- read.csv('FanGraphs---Reliability-data/data/2009-2014_BIPvelocity.cs
 
 
 #creates df matrix
-PA.list <- seq(from=10, to=600, by=50)
+PA.list <- seq(from=50, to=200, by=50)
 FUN.list <- list(list(K_parse,'K_pct'),list(BB_parse,'BB_pct'),list(OBP_parse,'OBP'),
                  list(HR_parse,'HR'), list(HBP_parse,'HBP'), list(X1B_parse,'X1B'),
                  list(wOBA_parse,'wOBA'))
@@ -91,7 +91,7 @@ write.csv(c, file='fg_alpha_out_JP_50BIP.csv', row.names=F)
 
 ####PC Sampling####
 #Random
-PA.list <- seq(from=10, to=500, by=10)
+PA.list <- seq(from=10, to=2000, by=10)
 
 Random = T
 PC.denom.list <- list(PA=2000,AB=2000,BIP=2000,newBIP=500)
@@ -128,35 +128,34 @@ for (i in PA.list){
 #     
 #   }
 #   
-#     for (j in BIP.list) {
-#       
-#       player.year.matrix <- matrix_parse(bip.prep,i,AVG_parse, Random) #get rid of the matrix_parse i
-#       alpha.list <- FG_alpha(player.year.matrix)
-#       out.list <- data.frame(denom=i, type = 'BIP', stat=j[[2]], alpha=alpha.list$alpha, sample_mean = alpha.list$X_bar, 
-#                              sample_sd = alpha.list$sd)
-#       out.df <- rbind(out.df, out.list)
-#       
-#     }
-#   
     for (j in BIP.list) {
       
-      player.year.matrix <- matrix_parse(new.bip.prep,i,j[[1]], Random) #get rid of the matrix_parse i
+      player.year.matrix <- matrix_parse(bip.prep,i,AVG_parse, Random) #get rid of the matrix_parse i
       alpha.list <- FG_alpha(player.year.matrix)
       out.list <- data.frame(denom=i, type = 'BIP', stat=j[[2]], alpha=alpha.list$alpha, sample_mean = alpha.list$X_bar, 
                              sample_sd = alpha.list$sd)
       out.df <- rbind(out.df, out.list)
       
     }
-    
+# #   
+#     for (j in BIP.list) {
+#       
+#       player.year.matrix <- matrix_parse(new.bip.prep,i,j[[1]], Random) #get rid of the matrix_parse i
+#       alpha.list <- FG_alpha(player.year.matrix)
+#       out.list <- data.frame(denom=i, type = 'BIP', stat=j[[2]], alpha=alpha.list$alpha, sample_mean = alpha.list$X_bar, 
+#                              sample_sd = alpha.list$sd)
+#       out.df <- rbind(out.df, out.list)
+#       
+#     }
+#     
   
 }
 #df for output
 c <- as.data.frame(out.df)
-#colnames(c) <- c('denom', 'type', 'stat', 'alpha', 'sample_mean', 'sample_sd')
 proc.time() - ptm
 
 
-write.csv(c, file='fg_alpha_out_test_500BIP_HH_prelim.csv', row.names=F)
+write.csv(c, file='fg_alpha_out_evaluation_BIP_2000Random.csv', row.names=F)
 
 #####NEW
 df.prep$key.vector
