@@ -20,6 +20,23 @@ data_prep_pc <- function(df, J){
   return(out.list)
 }
 
+# data_prep_pc_boot <- function(df, J){
+#   
+#   
+#   agg.df <- aggregate(GameDate ~ PlayerId, data = df, FUN = length)
+#   agg.df <- agg.df[which(agg.df$GameDate >= J),]
+#   
+#   out.df <- df[which(df$PlayerId %in% agg.df$PlayerId),]
+#   out.player <- unique(out.df$PlayerId)
+#   key.vector <- sample(x=out.player, size = 200, replace = T
+#   out.df$key <- out.df$PlayerId
+#   year.list <- unique(out.df$year)
+#   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+#   return(out.list)
+# }
+
+
+
 data_prep_pc_p <- function(df, J){
   
   
@@ -62,6 +79,21 @@ data_prep_pc_bip <- function(df, J){
   out.df <- df[which(df$PlayerId %in% agg.df$PlayerId),]
   out.df$key <- out.df$PlayerId
   out.player <- unique(out.df$PlayerId)
+  key.vector <- out.player
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
+data_prep_pc_bip_p <- function(df, J){
+  
+  
+  agg.df <- aggregate(BIPyesno ~ PitcherId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$BIPyesno >= J),]
+  
+  out.df <- df[which(df$PitcherId %in% agg.df$PitcherId),]
+  out.df$key <- out.df$PitcherId
+  out.player <- unique(out.df$PitcherId)
   key.vector <- out.player
   year.list <- unique(out.df$year)
   out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
@@ -118,6 +150,23 @@ data_prep_jp <- function(df, K){
   return(out.list)
 }
 
+data_prep_jp_year <- function(df, K, year){
+  
+  df <- df[which(df$year == year),]
+  agg.df <- aggregate(GameDate ~ year + PlayerId, data = df, FUN = length)
+  agg.df <- agg.df[which(agg.df$GameDate >= K),]
+  key.vector <- paste(agg.df$year,agg.df$PlayerId)
+  
+  out.df <- df[which(paste(df$year,df$PlayerId) %in% key.vector),]
+  out.df$key <- paste(out.df$year,out.df$PlayerId)
+  
+  
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+}
+
 #For At Bats
 data_prep_jp_ab <- function(df, K){
   
@@ -135,6 +184,24 @@ data_prep_jp_ab <- function(df, K){
   
   
 }
+
+data_prep_jp_ab_noyear <- function(df, K){
+  
+  
+  agg.df <- aggregate(AB ~ PlayerId, data = df, FUN = sum)
+  agg.df <- agg.df[which(agg.df$AB >= K),]
+  key.vector <- paste(agg.df$PlayerId)
+  
+  out.df <- df[which(df$PlayerId %in% key.vector & df$AB == 1),]
+  out.df$key <- out.df$PlayerId
+  out.player <- unique(out.df$PlayerId)
+  year.list <- unique(out.df$year)
+  out.list <- list(df = out.df, player.list = out.player, year.list = year.list, key.vector = key.vector)
+  return(out.list)
+  
+  
+}
+
 
 #For Batted Balls
 data_prep_jp_bip <- function(df, K){
@@ -155,6 +222,8 @@ data_prep_jp_bip <- function(df, K){
   
 }
 
+
+
 #Takes Data Parse and makes it into a value matrix
 matrix_parse <- function(df.obj, K, FUN, Random = T){
   
@@ -173,6 +242,27 @@ matrix_parse <- function(df.obj, K, FUN, Random = T){
   
   return(stat.matrix)
 }
+
+matrix_parse_boot <- function(df.obj, K, FUN, Random = T){
+  
+  stat.matrix <- NULL 
+  df <- df.obj$df
+
+  key.boot <- sample(x=df.obj$key.vector, size=200, replace=T)
+  for (i in key.boot){
+    
+    #player.year.df <-  subset(df, paste(df$year,df$PlayerId) == i)
+    player.year.df <- df[which(df$key == i),]
+    player.vector <- FUN(player.year.df, K, Random)
+    stat.matrix <- rbind(stat.matrix, player.vector)
+    
+  }
+  
+  return(stat.matrix)
+}
+
+
+
 
 ##################################
 ####Cronbach Alpha Evaluation####
@@ -213,6 +303,7 @@ stat_random <- function(df, K){
   return(df[sample(1:len.df, size=K),])
   
 }
+
 
 
 

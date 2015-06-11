@@ -27,6 +27,9 @@ PD_stats <- function(stat.df,alpha.df){
     stat.df$sem <- SD/denom * sqrt(1-alpha) * sqrt(alpha)
     stat.df$lower <- stat.df$regressed_stat - stat.df$sem
     stat.df$upper <- stat.df$regressed_stat + stat.df$sem
+    stat.df$se <- sqrt(stat.df$stat.value*(1-stat.df$stat.value)/denom)
+    stat.df$se_lower <- stat.df$stat.value - stat.df$se
+    stat.df$se_upper <- stat.df$stat.value + stat.df$se
     return(stat.df)
     
   }
@@ -36,7 +39,7 @@ PD_stats <- function(stat.df,alpha.df){
   } 
 }
 
-eval_stat <- function(player.df, alpha.df,stat.info){
+eval_stat <- function(player.df, alpha.df,stat.info,SEM=T){
   
   stat.df <- data.frame(denom.value=alpha_join(player.df$denom), denom=player.df$denom,stat.name=stat.info[[1]], 
                         stat.value=player.df$stat.value, stat.2000=player.df$stat.2000)
@@ -49,7 +52,15 @@ eval_stat <- function(player.df, alpha.df,stat.info){
     
   }
   print(eval.df)
-  return(sum(eval.df$stat.2000 > eval.df$lower & eval.df$stat.2000 < eval.df$upper)/N)
+  if (SEM){
+    print('sem')
+    return(sum(eval.df$stat.2000 > eval.df$lower & eval.df$stat.2000 < eval.df$upper)/N)
+  }
+  else{
+    print('se')
+    return(sum(eval.df$stat.2000 > eval.df$se_lower & eval.df$stat.2000 < eval.df$se_upper)/N)
+  }
+  
   
 }
 
@@ -58,11 +69,13 @@ eval_stat <- function(player.df, alpha.df,stat.info){
 
 alpha.key <- read.csv('fg_alpha_out_evaluation_PA_2000Random.csv')
 alpha.key <- read.csv('fg_alpha_out_test_ALLPA.csv')
+alpha.key <- read.csv('fg_alpha_out_evaluation_AB_2000Random.csv')
 alpha.key <- read.csv('fg_alpha_out_evaluation_BIP_2000Random.csv')
+alpha.key <- out.df
 
+pa.prep <- df.prep 
 
-
-df.prep <- bip.prep
+df.prep <-bip.prep
 df <- df.prep$df
 
 
@@ -81,6 +94,7 @@ stat.list <- list(list('wOBA','wOBA'))
 stat.list <- list(list('HBP','HBP'))
 stat.list <- list(list('X1B','S'))
 stat.list <- list(list('BABIP','hit'))
+stat.list <- list(list('AVG','hit'))
 
 
 
@@ -94,7 +108,7 @@ for (stat.info in stat.list){
   for (i in player.vector){
     print(i)
     player.df <- df[df$key == i,]
-    player.df <- player.df[sample(x=1:nrow(player.df),size=nrow(player.df),replace=F),]
+    #player.df <- player.df[sample(x=1:nrow(player.df),size=nrow(player.df),replace=F),]
     for (j in 1:nrow(player.df)){
       
       player.df$denom[j] <- j
@@ -108,8 +122,8 @@ for (stat.info in stat.list){
   #print(eval_stat(full.stat.df, alpha.df,stat.info))
   total <- rbind(total, full.stat.df)  
 }
-
-print(eval_stat(total[sample(x=nrow(total), size=1000),], alpha.key,stat.info))
+set.seed(1)
+print(eval_stat(total[sample(x=nrow(total), size=1000),], alpha.key,stat.info, SEM=F))
 
 
 
